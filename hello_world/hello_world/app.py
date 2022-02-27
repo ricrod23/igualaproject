@@ -32,12 +32,14 @@ def lambda_handler(event, context):
     #     print(e)
 
     #     raise e
-
+    from .db import get_db
+    database = get_db()
+    info = database.get('select *from contribuyentes_licencias')
     return {
         "statusCode": 200,
         "body": json.dumps(
             {
-                "message": "hello world",
+                "message": info,
                 # "location": ip.text.replace("\n", "")
             }
         ),
