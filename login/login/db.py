@@ -1,5 +1,3 @@
-import json
-import itertools
 import time
 import mysql.connector
 from mysql.connector.conversion import MySQLConverter
