@@ -36,6 +36,10 @@ def authenticate(username, password):
 def lambda_handler(event, context):
     """function to make a simple login to app
     """
+    return {
+        'status_code':200,
+        'body':json.dumps(event)
+    }
     from .db import Row
     b = json.loads(event['body'])
     body = Row(dict(b))

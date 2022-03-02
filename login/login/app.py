@@ -15,10 +15,10 @@ def authenticate(username, password):
     from pytz import timezone
     """Returns a user dict on success and an error string otherwise."""
     if not username:
-        return 'Authentication required.'
+        return 'Usuario obligatorio'
     user = get_user(username)
     if not user:
-        return 'User "%s" does not exist.' % username
+        return 'Usuario "%s" no existe' % username
     elif user.status is False:
         return 'Account disabled.'
     elif hashlib.md5(user.salt.encode('utf-8') + password.encode('utf-8')).hexdigest() == user.salted_password_md5:
@@ -31,7 +31,7 @@ def authenticate(username, password):
         where username=%s""", username)
         return user_upd
     else:
-        return 'Incorrect password.'
+        return 'Password incorrecto'
 
 def lambda_handler(event, context):
     """function to make a simple login to app
