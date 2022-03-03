@@ -72,6 +72,18 @@ def lambda_handler(event, context):
     import base64
     from .db import Row
     headers = Row(dict(event['headers']))
+    if not 'Authorization' in headers:
+        return {
+            'statusCode': 401,
+            'body': json.dumps({
+                'message': 'Autenticacion Basica requerida.'})
+        }
+    if not 'Basic' in headers.Authorization:
+        return {
+            'statusCode': 401,
+            'body': json.dumps({
+                'message': 'Autenticacion Basica requerida.'})
+        }
     auth = headers.Authorization.replace('Basic ','')
     decoded = base64.b64decode(auth).decode('utf-8')
     user_password = decoded.split(':')
@@ -102,7 +114,7 @@ def lambda_handler(event, context):
             user_or_error = 'Faltan campos para crear usuario'
 
     return {
-        'statusCode': 401,
+        'statusCode': 400,
         'body': json.dumps({
             'message': user_or_error})
     }
