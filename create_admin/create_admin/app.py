@@ -36,6 +36,7 @@ def authenticate(username, password):
 def lambda_handler(event, context):
     """function to make a simple login to app
     """
+    import base64
     return {
         'status_code':200,
         'body':json.dumps(event)

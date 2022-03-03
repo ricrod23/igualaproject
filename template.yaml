@@ -54,3 +54,13 @@ Outputs:
   LoginFunctionIamRole:
     Description: "Implicit IAM Role created for login World function"
     Value: !GetAtt LoginFunctionRole.Arn
+
+  CreateAdminApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/create_admin/"
+    LogindFunction:
+      Description: "Login Lambda Function ARN"
+      Value: !GetAtt CreateAdminFunction.Arn
+    LoginFunctionIamRole:
+      Description: "Implicit IAM Role created for login World function"
+      Value: !GetAtt CreateAdminFunction.Arn
