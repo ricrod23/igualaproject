@@ -40,6 +40,21 @@ Resources:
             Path: /iguala/create_admin
             Method: post
 
+  SaveLicenciaFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: save_licencia/
+      Handler: save_licencia.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        SaveLicenciaFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/save_licencia
+            Method: post
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -64,3 +79,14 @@ Outputs:
   CreateAdminFunctionIamRole:
       Description: "Implicit IAM Role created for login World function"
       Value: !GetAtt CreateAdminFunction.Arn
+
+
+  SaveLicenciaApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/save_licencia/"
+  SaveLicenciaFunction:
+      Description: "Login Lambda Function ARN"
+      Value: !GetAtt SaveLicenciaFunction.Arn
+  SaveLicenciaFunctionIamRole:
+      Description: "Implicit IAM Role created for login World function"
+      Value: !GetAtt SaveLicenciaFunction.Arn
