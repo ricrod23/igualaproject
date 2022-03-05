@@ -55,6 +55,21 @@ Resources:
             Path: /iguala/save_licencia
             Method: post
 
+  ConsultaCurpApi:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: search_curp/
+      Handler: search_curp.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        ConsultaCurpFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/search_curp
+            Method: get
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -90,3 +105,13 @@ Outputs:
   SaveLicenciaFunctionIamRole:
       Description: "Implicit IAM Role created for login World function"
       Value: !GetAtt SaveLicenciaFunction.Arn
+
+  ConsultaCurpApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_curp/"
+  ConsultaCurpFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt ConsultaCurpFunction.Arn
+  ConsultaCurpFunctionIamRole:
+     Description: "Implicit IAM Role created for login World function"
+     Value: !GetAtt ConsultaCurpFunction.Arn
