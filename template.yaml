@@ -55,7 +55,7 @@ Resources:
             Path: /iguala/save_licencia
             Method: post
 
-  ConsultaCurpApi:
+  ConsultaCurpFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: search_curp/
@@ -68,6 +68,21 @@ Resources:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /iguala/search_curp
+            Method: get
+
+  ConsultaTramiteFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: search_tramite/
+      Handler: search_tramite.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        ConsultaTramiteFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/search_tramite
             Method: get
 
 
@@ -113,5 +128,16 @@ Outputs:
     Description: "Login Lambda Function ARN"
     Value: !GetAtt ConsultaCurpFunction.Arn
   ConsultaCurpFunctionIamRole:
-     Description: "Implicit IAM Role created for login World function"
-     Value: !GetAtt ConsultaCurpFunction.Arn
+    Description: "Implicit IAM Role created for login World function"
+    Value: !GetAtt ConsultaCurpFunction.Arn
+
+
+  ConsultaTramiteApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_curp/"
+  ConsultaTramiteFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt ConsultaTramiteFunction.Arn
+  ConsultaTramiteFunctionIamRole:
+    Description: "Implicit IAM Role created for login World function"
+    Value: !GetAtt ConsultaTramiteFunction.Arn

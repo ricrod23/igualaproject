@@ -88,13 +88,17 @@ def lambda_handler(event, context):
                     ('alergias', bool),
                     ('donante', bool),
                     ('alergias_descripcion',str),
-                    ('tipo_licencia', str)
-                    )
-        #falta insert a contacto en caso de emergencia
+                    ('tipo_licencia', str),
+                    ('nombre_emergencia',str),
+                    ('apellidos_emergencia', str),
+                    ('telefono_emergencia', str),
+                    ('fecha_nacimiento', str),
+                    ('sexo', str)
+                )
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
-            exists = database.get('select curp from contribuyentes_licencias where curp =%s', p.curp)
+            exists = database.get('select curp from contribuyentes_licencias where curp =%s', p.curp.upper())
             if exists:
                 return {
                     'statusCode': 400,
@@ -103,7 +107,7 @@ def lambda_handler(event, context):
             now_date = datetime.datetime.now(tz=timezone('America/Mexico_City')).date()
             now_hour = datetime.datetime.now(tz=timezone('America/Mexico_City')).time()
             database.insert('contribuyentes_licencias',
-                            curp= p.curp,
+                            curp= p.curp.upper(),
                             nombre= p.nombre,
                             apellidos= p.apellidos,
                             calle_numero= p.calle_numero,
@@ -121,7 +125,16 @@ def lambda_handler(event, context):
                             id_usuario_creo = user_or_error.id,
                             hora_creacion = now_hour,
                             alergias_descripcion = p.alergias_descripcion,
-                            tipo_licencia= p.tipo_licencia
+                            tipo_licencia= p.tipo_licencia,
+                            fecha_nacimiento= datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
+                            sexo= p.sexo.upper()
+                        )
+            id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
+            database.insert('contactos_emergencia',
+                            id_contribuyente= id,
+                            nombre = p.nombre_emergencia,
+                            apellidos = p.apellidos_emergencia,
+                            telefono_contacto = p.telefono_emergencia
                         )
             #enviar email para la firma y foto
             return {

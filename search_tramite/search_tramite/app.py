@@ -3,11 +3,9 @@ from .db import get_db
 import json
 import hashlib
 import datetime
-import requests
-import html_to_json
+
 
 database = get_db()
-
 
 def get_user(username):
     user = database.get("""
@@ -69,38 +67,28 @@ def lambda_handler(event, context):
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
-            url = "http://www.renapo.sep.gob.mx/wsrenapo/MainControllerParam"
+            info = database.get('''select * from contribuyentes_licencias cl inner join 
+            contactos_emergencia ce on cl.id_contribuyente = ce.id_contribuyente where cl.curp=%s ''',p.curp.lower())
+            info['fecha_creacion'] = str(info.fecha_creacion)
+            info['hora_creacion'] = str(info.hora_creacion)[:8]
+            info['fecha_nacimiento'] = str(info.fecha_nacimiento)
+            if info['vigencia_inicio'] is not None:
+                info['vigencia_inicio'] = str(info.vigencia_inicio)
+            if info['vigencia_fin'] is not None:
+                info['vigencia_fin'] = str(info.vigencia_fin)
 
-            payload = 'curp=%s&Submit=Enviar' % p.curp.upper()
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-            response = requests.request("POST", url, headers=headers, data=payload)
-            try:
-                json_ = html_to_json.convert(response.text)
-                apellid_pat = json_['html'][0]['body'][0]['table'][0]['tr'][2]['td'][1]['div'][0]['_value']
-                apellido_mat = json_['html'][0]['body'][0]['table'][0]['tr'][3]['td'][1]['div'][0]['_value']
-                nombre = json_['html'][0]['body'][0]['table'][0]['tr'][15]['td'][1]['div'][0]['_value']
-                fecha_nac = json_['html'][0]['body'][0]['table'][0]['tr'][10]['td'][1]['div'][0]['_value']
-                sexo= json_['html'][0]['body'][0]['table'][0]['tr'][19]['td'][1]['div'][0]['_value']
+            print (info)
+
+            if info:
                 return {
                     'statusCode': 200,
-                    'body': json.dumps({
-                        'nombre': nombre,
-                        'apellid_pat': apellid_pat,
-                        'apellido_mat': apellido_mat,
-                        'fecha_nac': fecha_nac,
-                        'sexo': sexo
-                    })
+                    'body': json.dumps(info)
                 }
-            except Exception:
+            else:
                 return {
                     'statusCode': 400,
-                    'body': json.dumps({'message': 'No fue posible obtener los datos de tu CURP'})
+                    'body': json.dumps({'message': 'No existe informacion con la CURP proporcionada'})
                 }
-
-
-
         else:
             return {
                 'statusCode': 400,

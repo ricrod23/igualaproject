@@ -14,7 +14,7 @@
           <value>
             <DeploySamConfig>
               <option name="autoExecute" value="true" />
-              <option name="bucketName" value="iguala" />
+              <option name="bucketName" value="licenciasypermisos" />
               <option name="enabledCapabilities">
                 <list>
                   <option value="IAM" />
