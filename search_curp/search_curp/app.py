@@ -8,6 +8,12 @@ import html_to_json
 
 database = get_db()
 
+headers_cors = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+}
+
 
 def get_user(username):
     user = database.get("""
@@ -47,12 +53,14 @@ def lambda_handler(event, context):
     headers = Row(dict(event['headers']))
     if not 'Authorization' in headers:
         return {
+            'headers':headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
         }
     if not 'Basic' in headers.Authorization:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
@@ -84,6 +92,7 @@ def lambda_handler(event, context):
                 fecha_nac = json_['html'][0]['body'][0]['table'][0]['tr'][10]['td'][1]['div'][0]['_value']
                 sexo= json_['html'][0]['body'][0]['table'][0]['tr'][19]['td'][1]['div'][0]['_value']
                 return {
+                    'headers': headers_cors,
                     'statusCode': 200,
                     'body': json.dumps({
                         'nombre': nombre,
@@ -95,18 +104,18 @@ def lambda_handler(event, context):
                 }
             except Exception:
                 return {
+                    'headers': headers_cors,
                     'statusCode': 400,
                     'body': json.dumps({'message': 'No fue posible obtener los datos de tu CURP'})
                 }
-
-
-
         else:
             return {
+                'headers': headers_cors,
                 'statusCode': 400,
                 'body': json.dumps({'message': p})
             }
     return {
+        'headers': headers_cors,
         'statusCode': 400,
         'body': json.dumps({'message': user_or_error})
     }

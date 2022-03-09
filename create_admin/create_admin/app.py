@@ -4,6 +4,11 @@ from .db import get_db
 import datetime
 import random
 
+headers_cors = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+}
 
 database = get_db()
 
@@ -74,12 +79,14 @@ def lambda_handler(event, context):
     headers = Row(dict(event['headers']))
     if not 'Authorization' in headers:
         return {
+            'headers':headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
         }
     if not 'Basic' in headers.Authorization:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
@@ -105,6 +112,7 @@ def lambda_handler(event, context):
                 update_password(user.id,new_password)
                 user['password'] = new_password
                 return {
+                    'headers': headers_cors,
                     'statusCode': 200,
                     'body': json.dumps(user)
                 }
@@ -114,6 +122,7 @@ def lambda_handler(event, context):
             user_or_error = 'Faltan campos para crear usuario'
 
     return {
+        'headers': headers_cors,
         'statusCode': 400,
         'body': json.dumps({
             'message': user_or_error})

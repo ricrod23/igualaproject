@@ -4,6 +4,11 @@ import json
 import hashlib
 import datetime
 
+headers_cors = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+}
 
 database = get_db()
 
@@ -45,12 +50,14 @@ def lambda_handler(event, context):
     headers = Row(dict(event['headers']))
     if not 'Authorization' in headers:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
         }
     if not 'Basic' in headers.Authorization:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
@@ -76,25 +83,26 @@ def lambda_handler(event, context):
                 info['vigencia_inicio'] = str(info.vigencia_inicio)
             if info['vigencia_fin'] is not None:
                 info['vigencia_fin'] = str(info.vigencia_fin)
-
-            print (info)
-
             if info:
                 return {
+                    'headers': headers_cors,
                     'statusCode': 200,
                     'body': json.dumps(info)
                 }
             else:
                 return {
+                    'headers': headers_cors,
                     'statusCode': 400,
                     'body': json.dumps({'message': 'No existe informacion con la CURP proporcionada'})
                 }
         else:
             return {
+                'headers': headers_cors,
                 'statusCode': 400,
                 'body': json.dumps({'message': p})
             }
     return {
+        'headers': headers_cors,
         'statusCode': 400,
         'body': json.dumps({'message': user_or_error})
     }

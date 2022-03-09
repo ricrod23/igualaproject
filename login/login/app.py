@@ -5,6 +5,12 @@ import datetime
 
 database = get_db()
 
+headers = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+}
+
 def get_user(username):
     user = database.get("""
        select *from usuarios_gestion
@@ -41,6 +47,7 @@ def lambda_handler(event, context):
     body = Row(dict(b))
     if 'username' not in body or 'password' not in body:
         return {
+            'headers': headers,
             'statusCode': 400,
             'body': json.dumps(
             {
@@ -50,6 +57,7 @@ def lambda_handler(event, context):
 
     if type(body.username) is not str or type(body.password) is not str:
         return {
+            'headers': headers,
             'statusCode': 400,
             'body': json.dumps(
             {
@@ -60,11 +68,13 @@ def lambda_handler(event, context):
 
     if isinstance(user_or_error, dict):
         return {
+            'headers': headers,
             'statusCode': 200,
             'body': json.dumps(user_or_error)
         }
 
     return {
+        'headers': headers,
         'statusCode': 401,
         'body': json.dumps(
             {

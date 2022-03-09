@@ -6,6 +6,11 @@ import datetime
 import random
 from pytz import timezone
 
+headers_cors = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+}
 
 database = get_db()
 
@@ -56,12 +61,14 @@ def lambda_handler(event, context):
     headers = Row(dict(event['headers']))
     if not 'Authorization' in headers:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
         }
     if not 'Basic' in headers.Authorization:
         return {
+            'headers': headers_cors,
             'statusCode': 401,
             'body': json.dumps({
                 'message': 'Autenticacion Basica requerida.'})
@@ -138,16 +145,19 @@ def lambda_handler(event, context):
                         )
             #enviar email para la firma y foto
             return {
+                'headers': headers_cors,
                 'statusCode': 200,
                 'body': json.dumps({'message': 'Tramite de licencia registrado con exito, te enviamos un correo electronico para completar la informacion restante'})
             }
 
         else:
             return {
+                'headers': headers_cors,
                 'statusCode': 400,
                 'body': json.dumps({'message': p})
             }
     return {
+        'headers': headers_cors,
         'statusCode': 400,
         'body': json.dumps({'message': user_or_error})
     }
