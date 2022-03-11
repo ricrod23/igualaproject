@@ -85,6 +85,21 @@ Resources:
             Path: /iguala/search_tramite
             Method: get
 
+  ConsultaCpFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: search_cp/
+      Handler: search_cp.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        ConsultaTramiteFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/search_cp
+            Method: get
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -134,10 +149,20 @@ Outputs:
 
   ConsultaTramiteApi:
     Description: "API Gateway endpoint URL for Prod stage for create_admin function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_curp/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_tramite/"
   ConsultaTramiteFunction:
     Description: "Login Lambda Function ARN"
     Value: !GetAtt ConsultaTramiteFunction.Arn
   ConsultaTramiteFunctionIamRole:
     Description: "Implicit IAM Role created for login World function"
     Value: !GetAtt ConsultaTramiteFunction.Arn
+
+  ConsultaCpApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_cp/"
+  ConsultaCpFunction:
+    Description: "Login Lambda Function ARN"
+    Value: !GetAtt ConsultaCpFunction.Arn
+  ConsultaCpFunctionIamRole:
+    Description: "Implicit IAM Role created for login World function"
+    Value: !GetAtt ConsultaCpFunction.Arn
