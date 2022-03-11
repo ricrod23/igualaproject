@@ -31,6 +31,7 @@ def get_user(username):
 
 
 def authenticate(username, password):
+    from pytz import timezone
     """Returns a user dict on success and an error string otherwise."""
     if not username:
         return 'Se requiere autenticacion'
@@ -40,6 +41,10 @@ def authenticate(username, password):
     elif user.status is False:
         return 'Usuario inactivo'
     elif hashlib.md5(user.salt.encode('utf-8') + password.encode('utf-8')).hexdigest() == user.salted_password_md5:
+        now_date = datetime.datetime.now(tz=timezone('America/Mexico_City')).date()
+        now_hour = datetime.datetime.now(tz=timezone('America/Mexico_City')).time()
+        database.execute('update usuarios_gestion set last_login_hour=%s, last_login_date=%s where id=%s', now_hour,
+                         now_date, user.id)
         user_upd = database.get("""
         select id, username, nombre, apellidos, rol, status, CAST(last_login_date AS char) as last_login_date, CAST(last_login_hour AS char) as last_login_hour from usuarios_gestion
         where username=%s""", username)
@@ -138,9 +143,7 @@ def lambda_handler(event, context):
                             apellidos = p.apellidos_emergencia,
                             telefono_contacto = p.telefono_emergencia
                         )
-            from .utils import send_outlook
-            send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
-                                                                   'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html')
+            #enviar email para la firma y foto
             return {
                 'headers': headers_cors,
                 'statusCode': 200,

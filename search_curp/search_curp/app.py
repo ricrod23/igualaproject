@@ -2,6 +2,7 @@ from .db import get_db
 
 import json
 import hashlib
+import datetime
 import requests
 import html_to_json
 
@@ -22,6 +23,7 @@ def get_user(username):
 
 
 def authenticate(username, password):
+    from pytz import timezone
     """Returns a user dict on success and an error string otherwise."""
     if not username:
         return 'Se requiere autenticacion'
@@ -31,6 +33,10 @@ def authenticate(username, password):
     elif user.status is False:
         return 'Usuario inactivo'
     elif hashlib.md5(user.salt.encode('utf-8') + password.encode('utf-8')).hexdigest() == user.salted_password_md5:
+        now_date = datetime.datetime.now(tz=timezone('America/Mexico_City')).date()
+        now_hour = datetime.datetime.now(tz=timezone('America/Mexico_City')).time()
+        database.execute('update usuarios_gestion set last_login_hour=%s, last_login_date=%s where id=%s', now_hour,
+                         now_date, user.id)
         user_upd = database.get("""
         select id, username, nombre, apellidos, rol, status, CAST(last_login_date AS char) as last_login_date, CAST(last_login_hour AS char) as last_login_hour from usuarios_gestion
         where username=%s""", username)
@@ -67,6 +73,7 @@ def lambda_handler(event, context):
         b = event['queryStringParameters']
         body = Row(b)
         expected = (('curp',str),)
+        #falta insert a contacto en caso de emergencia
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
