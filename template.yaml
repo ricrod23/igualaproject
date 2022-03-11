@@ -9,6 +9,11 @@ Description: >
 Globals:
   Function:
     Timeout: 45
+  Api:
+    Cors:
+      AllowMethods: "'OPTIONS,POST,GET'"
+      AllowHeaders: "'*'"
+      AllowOrigin: "'*'"
 
 Resources:
   LoginFunction:

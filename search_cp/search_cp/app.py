@@ -79,7 +79,7 @@ def lambda_handler(event, context):
                 'headers': headers_cors,
                 'statusCode': 200,
                 'body': json.dumps({
-                    'colonias': [c.colonia for c in colonias]
+                    'colonias': [c.colonia.upper() for c in colonias]
                 })
             }
         else:

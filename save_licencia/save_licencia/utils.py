@@ -65,7 +65,7 @@ def send_outlook(recipients, subject, body, files=[], sender=None):
     outlook_password = 'Licencias2022'
 
     msg = MIMEMultipart()
-    msg['From'] = outlook_sender
+    msg['From'] = 'Licencias Iguala'
     msg['To'] = ','.join(recipients)
     msg['Date'] = formatdate(localtime=True)
     msg['Subject'] = subject
