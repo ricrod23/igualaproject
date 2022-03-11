@@ -2,8 +2,6 @@ from .db import get_db
 
 import json
 import hashlib
-import requests
-import html_to_json
 
 database = get_db()
 
@@ -66,41 +64,24 @@ def lambda_handler(event, context):
     if isinstance(user_or_error,dict):
         b = event['queryStringParameters']
         body = Row(b)
-        expected = (('curp',str),)
+        expected = (('cp',str),)
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
-            url = "http://www.renapo.sep.gob.mx/wsrenapo/MainControllerParam"
-
-            payload = 'curp=%s&Submit=Enviar' % p.curp.upper()
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            }
-            response = requests.request("POST", url, headers=headers, data=payload)
-            try:
-                json_ = html_to_json.convert(response.text)
-                apellid_pat = json_['html'][0]['body'][0]['table'][0]['tr'][2]['td'][1]['div'][0]['_value']
-                apellido_mat = json_['html'][0]['body'][0]['table'][0]['tr'][3]['td'][1]['div'][0]['_value']
-                nombre = json_['html'][0]['body'][0]['table'][0]['tr'][15]['td'][1]['div'][0]['_value']
-                fecha_nac = json_['html'][0]['body'][0]['table'][0]['tr'][10]['td'][1]['div'][0]['_value']
-                sexo= json_['html'][0]['body'][0]['table'][0]['tr'][19]['td'][1]['div'][0]['_value']
-                return {
-                    'headers': headers_cors,
-                    'statusCode': 200,
-                    'body': json.dumps({
-                        'nombre': nombre,
-                        'apellid_pat': apellid_pat,
-                        'apellido_mat': apellido_mat,
-                        'fecha_nac': fecha_nac,
-                        'sexo': sexo
-                    })
-                }
-            except Exception:
+            colonias = database.query("select colonia from codigos_postales where cp = %s ", p.cp)
+            if not colonias:
                 return {
                     'headers': headers_cors,
                     'statusCode': 400,
-                    'body': json.dumps({'message': 'No fue posible obtener los datos de tu CURP'})
+                    'body': json.dumps({'message': 'No fue posible obtener informacion con tu CP ingresa manualmente los datos. '})
                 }
+            return {
+                'headers': headers_cors,
+                'statusCode': 200,
+                'body': json.dumps({
+                    'colonias': [c.colonia for c in colonias]
+                })
+            }
         else:
             return {
                 'headers': headers_cors,
