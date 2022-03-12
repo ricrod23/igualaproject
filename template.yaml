@@ -120,6 +120,21 @@ Resources:
             Path: /iguala/save_permiso_comercial
             Method: post
 
+  SearchLicenciaPublicFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: search_licencia_public/
+      Handler: search_licencia_public.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        SearchLicenciaPublicFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/search_licencia_public
+            Method: get
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -196,3 +211,13 @@ Outputs:
   SavePermisoComercioFunctionIamRole:
       Description: "Implicit IAM Role created for login World function"
       Value: !GetAtt SavePermisoComercioFunction.Arn
+
+  SearchLicenciaPublicApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/search_licencia_public/"
+  SearchLicenciaPublicFunction:
+      Description: "Login Lambda Function ARN"
+      Value: !GetAtt SearchLicenciaPublicFunction.Arn
+  SearchLicenciaPublicFunctionIamRole:
+      Description: "Implicit IAM Role created for login World function"
+      Value: !GetAtt SearchLicenciaPublicFunction.Arn
