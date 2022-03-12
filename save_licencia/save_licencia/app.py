@@ -118,6 +118,7 @@ def lambda_handler(event, context):
                             estado= p.estado,
                             cp= p.cp,
                             telefono_celular= p.telefono_celular,
+                            telefono_fijo=p.telefono_fijo,
                             email = p.email,
                             tipo_sangre = p.tipo_sangre,
                             alergias = p.alergias,
