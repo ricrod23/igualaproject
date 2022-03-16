@@ -135,6 +135,21 @@ Resources:
             Path: /iguala/search_licencia_public
             Method: get
 
+  UploadFileFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: s3_upload/
+      Handler: s3_upload.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        UploadFileFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/s3_upload
+            Method: get
+
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -149,7 +164,6 @@ Outputs:
   LoginFunctionIamRole:
     Description: "Implicit IAM Role created for login World function"
     Value: !GetAtt LoginFunctionRole.Arn
-
   CreateAdminApi:
     Description: "API Gateway endpoint URL for Prod stage for create_admin function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/create_admin/"
@@ -221,3 +235,14 @@ Outputs:
   SearchLicenciaPublicFunctionIamRole:
       Description: "Implicit IAM Role created for login World function"
       Value: !GetAtt SearchLicenciaPublicFunction.Arn
+
+
+  UploadFileApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/s3_upload/"
+  UploadFileFunction:
+      Description: "Login Lambda Function ARN"
+      Value: !GetAtt UploadFileFunction.Arn
+  UploadFileFunctionIamRole:
+      Description: "Implicit IAM Role created for login World function"
+      Value: !GetAtt UploadFileFunction.Arn

@@ -95,7 +95,8 @@ def lambda_handler(event, context):
                     ('apellidos_emergencia', str),
                     ('telefono_emergencia', str),
                     ('fecha_nacimiento', str),
-                    ('sexo', str)
+                    ('sexo', str),
+                    ('link_foto', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -127,10 +128,11 @@ def lambda_handler(event, context):
                             fecha_creacion = now_date,
                             id_usuario_creo = user_or_error.id,
                             hora_creacion = now_hour,
-                            alergias_descripcion = p.alergias_descripcion,
-                            tipo_licencia= p.tipo_licencia,
-                            fecha_nacimiento= datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
-                            sexo= p.sexo.upper()
+                            alergias_descripcion =p.alergias_descripcion,
+                            tipo_licencia=p.tipo_licencia,
+                            fecha_nacimiento=datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
+                            sexo=p.sexo.upper(),
+                            link_foto=p.link_foto
                         )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
             database.insert('contactos_emergencia',
