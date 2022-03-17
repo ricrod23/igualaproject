@@ -5,6 +5,11 @@ import hashlib
 import datetime
 import random
 from pytz import timezone
+import qrcode
+import requests
+import boto3
+from io import BytesIO
+from PIL import Image
 
 headers_cors = {
         "Access-Control-Allow-Headers": "*",
@@ -21,6 +26,12 @@ def random_text(n=None):
     if n is None:
         n = random.randint(0, 128)
     return b64encode(os.urandom(n)).decode('utf-8')[:n]
+
+def set_llave(id, curp):
+    salt = random_text(32)
+    salted_key_md5 = hashlib.md5(salt.encode('utf-8') + curp.encode('utf-8')).hexdigest()
+    database.execute('update contribuyentes_licencias set llave_licencia_md5=%s, llave_licencia=%s where id_contribuyente=%s', salt, salted_key_md5, id)
+    return salted_key_md5
 
 
 def get_user(username):
@@ -141,6 +152,28 @@ def lambda_handler(event, context):
                             apellidos = p.apellidos_emergencia,
                             telefono_contacto = p.telefono_emergencia
                         )
+            key = set_llave(id, p.curp)
+            #QR
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_H,
+                box_size=5,
+                border=4
+            )
+            qr.add_data(
+                'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/consultarLicencia.html?criterio=llave_licencia&dato=%s&tipo=licenica' % (
+                    key))
+            qr.make(fit=True)
+            img = qr.make_image(fill_color='black', back_color='white').convert('RGB')
+            response = requests.get('http://s3-us-west-2.amazonaws.com/igualauploads/logo_iguala.png')
+            logo_display = Image.open(BytesIO(response.content))
+            logo_display.thumbnail((70, 70))
+            logo_pos = ((img.size[0] - logo_display.size[0]) // 2, (img.size[1] - logo_display.size[1]) // 2)
+            img.paste(logo_display, logo_pos)
+            img.save("/tmp/qr_%s.png" % key)
+            s3_client = boto3.client('s3')
+            s3_client.upload_file("/tmp/qr_%s.png" % key, 'igualauploads', "qr_%s.png" % key)
+
             from .utils import send_outlook
             send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
                                                                    'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html')

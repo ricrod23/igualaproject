@@ -1,2 +1,5 @@
 mysql-connector-python
 pytz
+qrcode
+image
+requests
