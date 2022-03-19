@@ -74,7 +74,7 @@ def lambda_handler(event, context):
             if p.tipo == 'licencia':
                 info = database.get('''select cl.id_contribuyente, curp, cl.nombre, cl.apellidos, calle_numero,colonia,municipio,estado,cp,telefono_celular, email, tipo_sangre,
                  alergias, tipo_licencia, fecha_nacimiento, sexo, link_firma, telefono_fijo, status_pago, alergias_descripcion, donante, tipo_licencia, link_foto, status_licencia,
-                 ce.nombre as nombre_emergencia, ce.apellidos as apellidos_emergencia, telefono_contacto as telefono_emergencia
+                 ce.nombre as nombre_emergencia, ce.apellidos as apellidos_emergencia, telefono_contacto as telefono_emergencia, llave_licencia
                 from contribuyentes_licencias as cl inner join contactos_emergencia as ce on cl.id_contribuyente = ce.id_contribuyente 
                 where ''' + p.criterio +'''= %s''', p.dato)
             else:

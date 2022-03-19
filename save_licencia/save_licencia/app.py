@@ -179,7 +179,7 @@ def lambda_handler(event, context):
 
             from .utils import send_outlook
             send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
-                                                                   'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?%s'%key)
+                                                                   'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?dato=%s&criterio=llave_licencia&tipo=licencia'%key)
             return {
                 'headers': headers_cors,
                 'statusCode': 200,
