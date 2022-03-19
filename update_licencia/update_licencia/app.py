@@ -86,10 +86,7 @@ def lambda_handler(event, context):
     if isinstance(user_or_error,dict):
         b = json.loads(event['body'])
         body = Row(dict(b))
-        expected = (('curp',str),
-                    ('nombre', str),
-                    ('apellidos',str),
-                    ('calle_numero', str),
+        expected = (('calle_numero', str),
                     ('colonia',str),
                     ('municipio',str),
                     ('estado',str),
@@ -105,85 +102,102 @@ def lambda_handler(event, context):
                     ('nombre_emergencia',str),
                     ('apellidos_emergencia', str),
                     ('telefono_emergencia', str),
-                    ('fecha_nacimiento', str),
-                    ('sexo', str),
-                    ('link_foto', str)
+                    ('link_foto', str),
+                    ('status_licencia', bool),
+                    ('status_pago', bool),
+                    ('folio_pago', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
-            exists = database.get('select curp from contribuyentes_licencias where curp =%s', p.curp.upper())
-            if exists:
+            exists = database.get('select curp, status_licencia from contribuyentes_licencias where curp =%s', p.curp.upper())
+            if not exists:
                 return {
+                    'headers':headers_cors,
                     'statusCode': 400,
-                    'body': json.dumps({'message': 'CURP ya fue registrada'})
+                    'body': json.dumps({'message': 'Licencia no encontrada'})
+                }
+            if exists.status_licencia:
+                return {
+                    'headers': headers_cors,
+                    'statusCode': 400,
+                    'body': json.dumps({'message': 'No es posible editar una licencia ya activada'})
                 }
             now_date = datetime.datetime.now(tz=timezone('America/Mexico_City')).date()
             now_hour = datetime.datetime.now(tz=timezone('America/Mexico_City')).time()
-            database.insert('contribuyentes_licencias',
-                            curp= p.curp.upper(),
-                            nombre= p.nombre,
-                            apellidos= p.apellidos,
-                            calle_numero= p.calle_numero,
-                            colonia= p.colonia,
-                            municipio= p.municipio,
-                            estado= p.estado,
-                            cp= p.cp,
-                            telefono_celular= p.telefono_celular,
-                            telefono_fijo=p.telefono_fijo,
-                            email = p.email,
-                            tipo_sangre = p.tipo_sangre,
-                            alergias = p.alergias,
-                            donante = p.donante,
-                            llave_licencia = 'lallave',
-                            fecha_creacion = now_date,
-                            id_usuario_creo = user_or_error.id,
-                            hora_creacion = now_hour,
-                            alergias_descripcion =p.alergias_descripcion,
-                            tipo_licencia=p.tipo_licencia,
-                            fecha_nacimiento=datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
-                            sexo=p.sexo.upper(),
-                            link_foto=p.link_foto,
-                            ultima_actualizacion_fecha=now_date,
-                            ultima_actualizacion_hora=now_hour
-                        )
+            if p.status_licencia or p.status_pago:
+                if not p.status_pago or not p.status_licencia:
+                    return {
+                        'headers': headers_cors,
+                        'statusCode': 400,
+                        'body': json.dumps({'message': 'Error con estatus de pago o estatus de licencia'})
+                    }
+                if p.folio_pago == '':
+                    return {
+                        'headers': headers_cors,
+                        'statusCode': 400,
+                        'body': json.dumps({'message': 'Folio de pago no puede ir vacio'})
+                    }
+            if p.status_pago:
+                from dateutil.relativedelta import relativedelta
+                final_date = now_date + relativedelta(years=5)
+                database.update('contribuyentes_licencias', 'curp', p.curp,
+                                calle_numero=p.calle_numero,
+                                colonia=p.colonia,
+                                municipio=p.municipio,
+                                estado=p.estado,
+                                cp=p.cp,
+                                telefono_celular=p.telefono_celular,
+                                telefono_fijo=p.telefono_fijo,
+                                email=p.email,
+                                tipo_sangre=p.tipo_sangre,
+                                alergias=p.alergias,
+                                donante=p.donante,
+                                alergias_descripcion=p.alergias_descripcion,
+                                tipo_licencia=p.tipo_licencia,
+                                link_foto=p.link_foto,
+                                ultima_actualizacion_fecha=now_date,
+                                ultima_actualizacion_hora=now_hour,
+                                id_ultima_modificacion=user_or_error.id,
+                                status_licencia=True,
+                                status_pago=True,
+                                folio_pago=p.folio_pago,
+                                vigencia_inicio=now_date,
+                                vigencia_fin=final_date
+                )
+            else:
+                database.update('contribuyentes_licencias','curp', p.curp,
+                                calle_numero= p.calle_numero,
+                                colonia= p.colonia,
+                                municipio= p.municipio,
+                                estado= p.estado,
+                                cp= p.cp,
+                                telefono_celular= p.telefono_celular,
+                                telefono_fijo=p.telefono_fijo,
+                                email = p.email,
+                                tipo_sangre = p.tipo_sangre,
+                                alergias = p.alergias,
+                                donante = p.donante,
+                                alergias_descripcion =p.alergias_descripcion,
+                                tipo_licencia=p.tipo_licencia,
+                                link_foto=p.link_foto,
+                                ultima_actualizacion_fecha=now_date,
+                                ultima_actualizacion_hora=now_hour,
+                                id_ultima_modificacion=user_or_error.id,
+                                status_licencia=False,
+                                status_pago=False,
+                                folio_pago=''
+                            )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
-            database.insert('contactos_emergencia',
-                            id_contribuyente= id,
+            database.update('contactos_emergencia', 'id_contribuyente',id,
                             nombre = p.nombre_emergencia,
                             apellidos = p.apellidos_emergencia,
                             telefono_contacto = p.telefono_emergencia
                         )
-            key = set_llave(id, p.curp)
-            #QR
-            qr = qrcode.QRCode(
-                version=1,
-                error_correction=qrcode.constants.ERROR_CORRECT_H,
-                box_size=5,
-                border=4
-            )
-            qr.add_data(
-                'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/consultarLicencia.html?criterio=llave_licencia&dato=%s&tipo=licenica' % (
-                    key))
-            qr.make(fit=True)
-            img = qr.make_image(fill_color='black', back_color='white').convert('RGB')
-            response = requests.get('http://s3-us-west-2.amazonaws.com/igualauploads/logo_iguala.png')
-            logo_display = Image.open(BytesIO(response.content))
-            logo_display.thumbnail((70, 70))
-            logo_pos = ((img.size[0] - logo_display.size[0]) // 2, (img.size[1] - logo_display.size[1]) // 2)
-            img.paste(logo_display, logo_pos)
-            img.save("/tmp/qr_%s.png" % key)
-            s3_client = boto3.client('s3')
-            s3_client.upload_file("/tmp/qr_%s.png" % key, 'igualauploads', "qr_%s.png" % key)
-            database.update('contribuyentes_licencias','id_contribuyente',id,link_qr='http://s3-us-west-2.amazonaws.com/igualauploads/qr_%s.png'%(key))
-
-            from .utils import send_outlook
-            send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
-                                                                   'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?%s'%key)
             return {
                 'headers': headers_cors,
                 'statusCode': 200,
-                'body': json.dumps({'message': 'Tramite de licencia registrado con exito, te enviamos un correo electronico para completar la informacion restante si no lo ves revisa Correo no deseado o Spam'})
+                'body': json.dumps({'message': 'Guardado con Exito'})
             }
 
         else:
