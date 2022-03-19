@@ -119,23 +119,17 @@ def lambda_handler(event, context):
     auth = headers.Authorization.replace('Basic ','')
     decoded = base64.b64decode(auth).decode('utf-8')
     user_password = decoded.split(':')
-    user_or_error = authenticate(user_password[0],user_password[1])
-    if isinstance(user_or_error,dict):
-        url, s3_form = get_s3_form(
-            'igualauploads',
-            'us-west-2',
-            'AKIAUAAEXHS5LFZSLGZC',
-            'stKvf09rH4gxJvrujzsHpxbW9wV1mv0X2LAk84dr',
-            'public-read')
-        return {
-            'headers': headers_cors,
-            'statusCode': 200,
-            'body': json.dumps({'url': url, 's3_form': s3_form})
-        }
+
+    url, s3_form = get_s3_form(
+        'igualauploads',
+        'us-west-2',
+        'AKIAUAAEXHS5LFZSLGZC',
+        'stKvf09rH4gxJvrujzsHpxbW9wV1mv0X2LAk84dr',
+        'public-read')
     return {
         'headers': headers_cors,
-        'statusCode': 400,
-        'body': json.dumps({'message': user_or_error})
+        'statusCode': 200,
+        'body': json.dumps({'url': url, 's3_form': s3_form})
     }
 
 
