@@ -108,6 +108,8 @@ def lambda_handler(event, context):
                     ('fecha_nacimiento', str),
                     ('sexo', str),
                     ('link_foto', str)
+                    ('link_identificacion_anv', str),
+                    ('link_identificacion_rev', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -144,6 +146,8 @@ def lambda_handler(event, context):
                             fecha_nacimiento=datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
                             sexo=p.sexo.upper(),
                             link_foto=p.link_foto,
+                            link_identificacion_anv= p.link_identificacion_anv,
+                            link_identificacion_rev=p.link_identificacion_rev,
                             ultima_actualizacion_fecha=now_date,
                             ultima_actualizacion_hora=now_hour
                         )

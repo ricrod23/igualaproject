@@ -195,6 +195,21 @@ Resources:
             Path: /iguala/update_firma
             Method: post
 
+  UpdatePermisoFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: update_permiso/
+      Handler: update_permiso.app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        UpdatePermisoFunction:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /iguala/update_permiso
+            Method: post
+
 
 
 
@@ -323,3 +338,13 @@ Outputs:
   UpdateFirmaFunctionIamRole:
       Description: "Implicit IAM Role created for login World function"
       Value: !GetAtt UpdateFirmaFunction.Arn
+
+  UpdatePermisoApi:
+    Description: "API Gateway endpoint URL for Prod stage for create_admin function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/update_permiso/"
+  UpdatePermisoFunction:
+      Description: "Login Lambda Function ARN"
+      Value: !GetAtt UpdatePermisoFunction.Arn
+  UpdatePermisoFunctionIamRole:
+      Description: "Implicit IAM Role created for login World function"
+      Value: !GetAtt UpdatePermisoFunction.Arn
