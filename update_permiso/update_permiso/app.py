@@ -107,7 +107,11 @@ def lambda_handler(event, context):
                     ('giro', str),
                     ('tipo', str),
                     ('horario_inicio', str),
-                    ('horario_cierre', str)
+                    ('horario_cierre', str),
+                    ('link_identificacion_anv', str),
+                    ('link_identificacion_rev', str),
+                    ('dia_ini_funcionamiento', str),
+                    ('dia_fin_funcionamiento', str)
             )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -142,7 +146,7 @@ def lambda_handler(event, context):
                     }
             if p.status_pago:
                 from dateutil.relativedelta import relativedelta
-                final_date = now_date + relativedelta(years=5)
+                final_date = now_date + relativedelta(years=1)
                 database.update('permisos_comerciales_descrip', 'id_permiso', p.id_permiso,
                                 razon_social=p.razon_social.upper(),
                                 denominacion=p.denominacion.upper(),
@@ -160,7 +164,11 @@ def lambda_handler(event, context):
                                 status_pago=True,
                                 folio_pago=p.folio_pago,
                                 vigencia_inicio=now_date,
-                                vigencia_fin=final_date
+                                vigencia_fin=final_date,
+                                link_identificacion_anv=p.link_identificacion_anv,
+                                link_identificacion_rev=p.link_identificacion_rev,
+                                dia_ini_funcionamiento=p.dia_ini_funcionamiento,
+                                dia_fin_funcionamiento=p.dia_fin_funcionamiento
                 )
             else:
                 database.update('permisos_comerciales_descrip', 'id_permiso', p.id_permiso,
@@ -175,7 +183,13 @@ def lambda_handler(event, context):
                                 horario_cierre=p.horario_cierre,
                                 ultima_actualizacion_fecha=now_date,
                                 ultima_actualizacion_hora=now_hour,
-                                id_ultima_modificacion=user_or_error.id
+                                id_ultima_modificacion=user_or_error.id,
+                                link_identificacion_anv=p.link_identificacion_anv,
+                                link_identificacion_rev=p.link_identificacion_rev,
+                                dia_ini_funcionamiento=p.dia_ini_funcionamiento,
+                                dia_fin_funcionamiento=p.dia_fin_funcionamiento
+
+
                                 )
             database.update('contribuyentes_permisos_comerciales','id_permiso', p.id_permiso,
                             curp=p.curp,
@@ -183,7 +197,7 @@ def lambda_handler(event, context):
                             propietario_nombre=p.propietario_nombre,
                             propietario_apellidos=p.propietario_apellidos,
                             propietario_colonia=p.propietario_colonia,
-                            propietarion_calle_numero=p.propietario_callle_numero,
+                            propietario_calle_numero=p.propietario_calle_numero,
                             propietario_cp=p.propietario_cp,
                             telefono_celular=p.telefono_celular,
                             telefono_fijo=p.telefono_fijo,

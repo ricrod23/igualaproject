@@ -74,13 +74,14 @@ def lambda_handler(event, context):
             if p.tipo == 'licencia':
                 info = database.get('''select cl.id_contribuyente, curp, cl.nombre, cl.apellidos, calle_numero,colonia,municipio,estado,cp,telefono_celular, email, tipo_sangre,
                  alergias, tipo_licencia, fecha_nacimiento, sexo, link_firma, telefono_fijo, status_pago, alergias_descripcion, donante, tipo_licencia, link_foto, status_licencia,
-                 ce.nombre as nombre_emergencia, ce.apellidos as apellidos_emergencia, telefono_contacto as telefono_emergencia, llave_licencia
+                 ce.nombre as nombre_emergencia, ce.apellidos as apellidos_emergencia, telefono_contacto as telefono_emergencia, llave_licencia,
+                 link_identificacion_anv, link_identificacion_rev
                 from contribuyentes_licencias as cl inner join contactos_emergencia as ce on cl.id_contribuyente = ce.id_contribuyente 
                 where ''' + p.criterio +'''= %s''', p.dato)
             else:
                 info = database.query('''select cp.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
-                horario_cierre, status_permiso, status_pago, link_firma, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia, propietario_cp, telefono_celular,
-                telefono_fijo, email, fecha_nacimiento, sexo, llave_permiso
+                horario_cierre, status_permiso, status_pago, link_firma, curp, rfc, propietario_nombre, propietario_apellidos, propietario_calle_numero, propietario_colonia, propietario_cp, telefono_celular,
+                telefono_fijo, email, fecha_nacimiento, sexo, llave_permiso, link_identificacion_anv, link_identificacion_rev, dia_ini_funcionamiento, dia_fin_funcionamiento
                 from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso where ''' + p.criterio + '''= %s''',p.dato)
             if info:
                 return {

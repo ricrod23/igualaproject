@@ -112,7 +112,9 @@ def lambda_handler(event, context):
                 ('horario_inicio', str),
                 ('horario_cierre', str),
                 ('link_identificacion_anv', str),
-                ('link_identificacion_rev', str)
+                ('link_identificacion_rev', str),
+                ('dia_ini_funcionamiento', str),
+                ('dia_fin_funcionamiento', str)
             )
             from .utils import validate_body
             p = validate_body(expected, body)
@@ -137,8 +139,9 @@ def lambda_handler(event, context):
                                           link_identificacion_anv=p.link_identificacion_anv,
                                           link_identificacion_rev=p.link_identificacion_rev,
                                           ultima_actualizacion_fecha=now_date,
-                                          ultima_actualizacion_hora=now_hour
-
+                                          ultima_actualizacion_hora=now_hour,
+                                          dia_ini_funcionamiento=p.dia_ini_funcionamiento,
+                                          dia_fin_funcionamiento=p.dia_fin_funcionamiento
                                           )
                 database.insert('contribuyentes_permisos_comerciales',
                                 id_permiso=permiso,
@@ -150,6 +153,7 @@ def lambda_handler(event, context):
                                 propietario_cp=p.propietario_cp,
                                 telefono_celular=p.telefono_celular,
                                 telefono_fijo=p.telefono_fijo,
+                                propietario_calle_numero=p.propietario_calle_numero,
                                 email=p.email,
                                 fecha_nacimiento=p.fecha_nacimiento,
                                 sexo=p.sexo,
