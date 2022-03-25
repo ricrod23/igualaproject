@@ -38,9 +38,9 @@ def lambda_handler(event, context):
                         database.update('contribuyentes_licencia', p.criterio, p.dato, status_licencia=False)
                         p.status_licencia= False
         else:
-            info = database.query('''select cp.id_permiso, razon_social, denominacion, giro, tipo, horario_inicio, horario_cierre, status_permiso, 
+            info = database.get('''select cp.id_permiso, razon_social, denominacion, giro, tipo, horario_inicio, horario_cierre, status_permiso, 
             CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin, curp, rfc, propietario_nombre, propietario_apellidos
-                                                from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso where ''' + p.criterio + '''= %s''',p.dato)
+                                                from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso where ''' + p.criterio + '''= %s limit 1''',p.dato)
             if info:
                 import datetime
                 from pytz import timezone

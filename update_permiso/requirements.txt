@@ -3,3 +3,5 @@ pytz
 qrcode
 image
 requests
+PyPDF2
+reportlab

@@ -70,29 +70,24 @@ def lambda_handler(event, context):
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
-            url = "http://www.renapo.sep.gob.mx/wsrenapo/MainControllerParam"
+            url = "https://us-west4-arsus-production.cloudfunctions.net/curp"
 
-            payload = 'curp=%s&Submit=Enviar' % p.curp.upper()
-            headers = {
-                'Content-Type': 'application/x-www-form-urlencoded',
+            params = {
+                'curp':p.curp,
+                'apiKey':'YcB9uq74BKhMK6kpES2EbhaPziw2'
             }
-            response = requests.request("POST", url, headers=headers, data=payload)
+            response = requests.request("GET", url, params=params)
+            r = response.json()
             try:
-                json_ = html_to_json.convert(response.text)
-                apellid_pat = json_['html'][0]['body'][0]['table'][0]['tr'][2]['td'][1]['div'][0]['_value']
-                apellido_mat = json_['html'][0]['body'][0]['table'][0]['tr'][3]['td'][1]['div'][0]['_value']
-                nombre = json_['html'][0]['body'][0]['table'][0]['tr'][15]['td'][1]['div'][0]['_value']
-                fecha_nac = json_['html'][0]['body'][0]['table'][0]['tr'][10]['td'][1]['div'][0]['_value']
-                sexo= json_['html'][0]['body'][0]['table'][0]['tr'][19]['td'][1]['div'][0]['_value']
                 return {
                     'headers': headers_cors,
                     'statusCode': 200,
                     'body': json.dumps({
-                        'nombre': nombre,
-                        'apellid_pat': apellid_pat,
-                        'apellido_mat': apellido_mat,
-                        'fecha_nac': fecha_nac,
-                        'sexo': sexo
+                        'nombre': r['name'],
+                        'apellid_pat': r['fatherName'],
+                        'apellido_mat': r['motherName'],
+                        'fecha_nac': r['birthday'].split('T')[0],
+                        'sexo': p.curp[10]
                     })
                 }
             except Exception:
