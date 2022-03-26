@@ -107,9 +107,10 @@ def lambda_handler(event, context):
                     ('telefono_emergencia', str),
                     ('fecha_nacimiento', str),
                     ('sexo', str),
-                    ('link_foto', str)
+                    ('link_foto', str),
                     ('link_identificacion_anv', str),
-                    ('link_identificacion_rev', str)
+                    ('link_identificacion_rev', str),
+                    ('link_certificado_tipo_sangre', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -143,13 +144,14 @@ def lambda_handler(event, context):
                             hora_creacion = now_hour,
                             alergias_descripcion =p.alergias_descripcion,
                             tipo_licencia=p.tipo_licencia,
-                            fecha_nacimiento=datetime.datetime.strptime(p.fecha_nacimiento,'%d/%m/%Y').date(),
+                            fecha_nacimiento=datetime.datetime.strptime(p.fecha_nacimiento,'%Y-%m-%d').date(),
                             sexo=p.sexo.upper(),
                             link_foto=p.link_foto,
                             link_identificacion_anv= p.link_identificacion_anv,
                             link_identificacion_rev=p.link_identificacion_rev,
                             ultima_actualizacion_fecha=now_date,
-                            ultima_actualizacion_hora=now_hour
+                            ultima_actualizacion_hora=now_hour,
+                            link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
                         )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
             database.insert('contactos_emergencia',
@@ -187,7 +189,7 @@ def lambda_handler(event, context):
             return {
                 'headers': headers_cors,
                 'statusCode': 200,
-                'body': json.dumps({'message': 'Tramite de licencia registrado con exito, te enviamos un correo electronico para completar la informacion restante si no lo ves revisa Correo no deseado o Spam'})
+                'body': json.dumps({'message': 'Tramite de licencia registrado con exito tu Folio de seguimiento es: %s, te enviamos un correo electronico para completar la informacion restante si no lo ves revisa Correo no deseado o Spam'%id})
             }
 
         else:

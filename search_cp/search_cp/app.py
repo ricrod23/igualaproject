@@ -73,7 +73,7 @@ def lambda_handler(event, context):
                 return {
                     'headers': headers_cors,
                     'statusCode': 400,
-                    'body': json.dumps({'message': 'No fue posible obtener informacion con tu CP ingresa manualmente los datos. '})
+                    'body': json.dumps({'message': 'No fue posible obtener informacion con tu CP.'})
                 }
             return {
                 'headers': headers_cors,

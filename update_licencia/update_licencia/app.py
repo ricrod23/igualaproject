@@ -105,7 +105,10 @@ def lambda_handler(event, context):
                     ('link_foto', str),
                     ('status_licencia', bool),
                     ('status_pago', bool),
-                    ('folio_pago', str)
+                    ('folio_pago', str),
+                    ('link_identificacion_anv', str),
+                    ('link_identificacion_rev', str),
+                    ('link_certificado_tipo_sangre', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -163,7 +166,10 @@ def lambda_handler(event, context):
                                 status_pago=True,
                                 folio_pago=p.folio_pago,
                                 vigencia_inicio=now_date,
-                                vigencia_fin=final_date
+                                vigencia_fin=final_date,
+                                link_identificacion_anv = p.link_identificacion_anv,
+                                link_identificacion_rev= p.link_identificacion_rev,
+                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
                 )
             else:
                 database.update('contribuyentes_licencias','curp', p.curp,
@@ -186,7 +192,10 @@ def lambda_handler(event, context):
                                 id_ultima_modificacion=user_or_error.id,
                                 status_licencia=False,
                                 status_pago=False,
-                                folio_pago=''
+                                link_identificacion_anv=p.link_identificacion_anv,
+                                link_identificacion_rev=p.link_identificacion_rev,
+                                folio_pago='',
+                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
                             )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
             database.update('contactos_emergencia', 'id_contribuyente',id,

@@ -191,7 +191,7 @@ def lambda_handler(event, context):
                     'headers': headers_cors,
                     'statusCode': 200,
                     'body': json.dumps({
-                        'message': 'Tramite de permiso registrado con exito, te enviamos un correo electronico para completar la informacion restante si no lo ves revisa Correo no deseado o Spam'})
+                        'message': 'Tramite de permiso registrado con exito tu folio es: %s, te enviamos un correo electronico para completar la informacion restante si no lo ves revisa Correo no deseado o Spam'%(permiso)})
                 }
 
             else:
