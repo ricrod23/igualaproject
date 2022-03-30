@@ -5,11 +5,8 @@ import hashlib
 import datetime
 import random
 from pytz import timezone
-import qrcode
-import requests
 import boto3
-from io import BytesIO
-from PIL import Image
+from reportlab.lib.utils import ImageReader
 
 headers_cors = {
         "Access-Control-Allow-Headers": "*",
@@ -57,6 +54,202 @@ def authenticate(username, password):
         return user_upd
     else:
         return 'Incorrect password.'
+
+def create_pdf_anv(id_contr):
+    import os
+    import io
+
+    from PyPDF2 import PdfFileReader, PdfFileWriter
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+
+    information = database.get('''select id_contribuyente, nombre, apellidos, curp, vigencia_inicio, vigencia_fin, 
+     calle_numero, colonia, cp, tipo_licencia, link_firma, link_foto, llave_licencia from contribuyentes_licencias where id_contribuyente= %s ''', id_contr)
+    # get image
+    s3 = boto3.client(
+        aws_access_key_id='AKIAUAAEXHS5LFZSLGZC',
+        aws_secret_access_key='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',
+        region_name='us-west-2',
+        service_name='s3'
+    )
+
+    qr_file_name = 'qr_' + information.llave_licencia + '.png'
+    plantilla_file_name = 'plantilla_licencia_iguala_anv_v2.pdf'
+
+    with open('/tmp/' + qr_file_name, 'wb') as data:
+       s3.download_fileobj('igualauploads', qr_file_name, data)
+    with open('/tmp/' + plantilla_file_name, 'wb') as data:
+        s3.download_fileobj('igualauploads', plantilla_file_name, data)
+
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    image_profile = ImageReader(information.link_foto)
+    firma_image = ImageReader(information.link_firma)
+    can.drawImage(image_profile,10,510,50,50)
+    can.drawImage(firma_image, 10, 471, 50, 30, mask='auto')
+    if information.tipo_licencia == 'AUTOMOVILISTA':
+        tipo_letra = 'A_roja.png'
+    elif information.tipo_licencia == 'CHOFER':
+        tipo_letra = 'C_roja.png'
+    elif information.tipo_licencia == 'PERMISO':
+        tipo_letra = 'P_roja.png'
+    elif information.tipo_licencia == 'MOTOCICLISTA':
+        tipo_letra = 'M_roja.png'
+
+    with open('/tmp/' + tipo_letra, 'wb') as data:
+       s3.download_fileobj('igualauploads', tipo_letra, data)
+
+    can.drawImage('/tmp/' + tipo_letra, 201, 533, 25, 25)
+    can.drawImage('/tmp/qr_' + information.llave_licencia + '.png', 200, 485, 35, 35)
+    can.setFont('Helvetica-Bold', 5)
+    can.drawString(72, 565, "NOMBRE:")
+    can.setFont('Helvetica-Bold', 8)
+    can.drawString(72, 556, information.nombre)
+    can.drawString(72, 547, information.apellidos)
+    can.setFont('Helvetica-Bold', 5)
+    can.drawString(72, 537, 'CURP: %s'%information.curp)
+    can.drawString(72, 527, 'DOMICILIO:')
+    can.drawString(72, 520,'%s, %s'% (information.calle_numero,information.colonia))
+    can.drawString(72, 513, 'IGUALA DE LA INDEPENDENCIA, GUERRERO, %s' % (information.cp))
+    can.drawString(72, 503, 'EXPEDICIÓN:')
+    can.drawString(72, 496, '%s' % information.vigencia_inicio.strftime('%Y-%m-%d'))
+    can.drawString(72, 486, 'VENCIMIENTO:')
+    can.drawString(72, 479, '%s' % information.vigencia_fin.strftime('%Y-%m-%d'))
+
+    can.setFont('Helvetica-Bold', 7)
+    can.drawString(160, 503, 'FOLIO:')
+    can.drawString(163, 496, '%s' % information.id_contribuyente)
+    can.drawString(158, 478, '%s' % information.tipo_licencia)
+    #
+    can.save()
+
+    # move to the beginning of the StringIO buffer
+    packet.seek(0)
+
+    # create a new PDF with Reportlab
+    new_pdf = PdfFileReader(packet)
+    # read your existing PDF
+    read_plantilla = open("/tmp/plantilla_licencia_iguala_anv_v2.pdf", "rb")
+    existing_pdf = PdfFileReader(read_plantilla)
+    output = PdfFileWriter()
+    # add the "watermark" (which is the new pdf) on the existing page
+    page = existing_pdf.getPage(0)
+    page.mergePage(new_pdf.getPage(0))
+    output.addPage(page)
+    # finally, write "output" to a real file
+    outputStream = open("/tmp/licencia_%s_anv.pdf" % (information.llave_licencia), "wb")
+    output.write(outputStream)
+    outputStream.close()
+    read_plantilla.close()
+
+    try:
+        os.remove('/tmp/qr_' + information.llave_licencia + '.png')
+    except Exception:
+        pass
+    try:
+        os.remove('/tmp/' + tipo_letra)
+    except Exception:
+        pass
+    import base64
+    with open("/tmp/licencia_%s_anv.pdf" % (information.llave_licencia), "rb") as pdf:
+        encoded_string = base64.b64encode(pdf.read())
+        pdf.close()
+
+    s3.upload_file("/tmp/licencia_%s_anv.pdf" % (information.llave_licencia), 'igualauploads',
+                          "licencia_%s_anv.pdf" % (information.llave_licencia))
+    try:
+        os.remove('/tmp/licencia_%s_anv.pdf' % information.llave_licencia)
+    except Exception:
+        pass
+    try:
+        os.remove('/tmp/%s' % plantilla_file_name)
+    except Exception:
+        pass
+
+    return encoded_string
+
+def create_pdf_rev(id_contr):
+    import os
+    import io
+
+    from PyPDF2 import PdfFileReader, PdfFileWriter
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+
+    information = database.get('''select fecha_nacimiento, donante, telefono_contacto, ce.nombre as nombre_emergencia, ce.apellidos as apellidos_emergencia, tipo_sangre, alergias_descripcion, llave_licencia 
+    from contribuyentes_licencias cl inner join contactos_emergencia ce on cl.id_contribuyente = ce.id_contribuyente where cl.id_contribuyente= %s ''', id_contr)
+    # get image
+    s3 = boto3.client(
+        aws_access_key_id='AKIAUAAEXHS5LFZSLGZC',
+        aws_secret_access_key='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',
+        region_name='us-west-2',
+        service_name='s3'
+    )
+
+    qr_file_name = 'qr_' + information.llave_licencia + '.png'
+    plantilla_file_name = 'plantilla_licencia_iguala_rev_v2.pdf'
+
+    with open('/tmp/' + qr_file_name, 'wb') as data:
+       s3.download_fileobj('igualauploads', qr_file_name, data)
+    with open('/tmp/' + plantilla_file_name, 'wb') as data:
+        s3.download_fileobj('igualauploads', plantilla_file_name, data)
+
+    packet = io.BytesIO()
+    can = canvas.Canvas(packet, pagesize=letter)
+    can.drawImage('/tmp/qr_' + information.llave_licencia + '.png', 170, 510, 70, 70)
+    can.setFont('Helvetica-Bold', 5)
+    can.drawString(5, 600, "FECHA DE NACIMIENTO: %s" % information.fecha_nacimiento)
+    can.drawString(5, 590, 'DONADOR DE ÓRGANOS: %s'%('SÍ' if information.donante else 'NO'))
+    can.drawString(5, 580, 'TELEFONO EN CASO DE EMRGENCIA:')
+    can.drawString(5, 570,'%s'% information.telefono_contacto)
+    can.drawString(5, 560, 'CONTACTO DE EMERGENCIA:')
+    can.drawString(5, 550, '%s %s' %(information.nombre_emergencia, information.apellidos_emergencia))
+    can.drawString(5, 540, 'TIPO DE SANGRE: %s' % information.tipo_sangre)
+    can.drawString(5, 530, 'ALERGÍAS:')
+    can.drawString(5, 520, '%s' % information.alergias_descripcion)
+    #
+    can.save()
+
+    # move to the beginning of the StringIO buffer
+    packet.seek(0)
+
+    # create a new PDF with Reportlab
+    new_pdf = PdfFileReader(packet)
+    # read your existing PDF
+    read_plantilla = open("/tmp/%s"%plantilla_file_name, "rb")
+    existing_pdf = PdfFileReader(read_plantilla)
+    output = PdfFileWriter()
+    # add the "watermark" (which is the new pdf) on the existing page
+    page = existing_pdf.getPage(0)
+    page.mergePage(new_pdf.getPage(0))
+    output.addPage(page)
+    # finally, write "output" to a real file
+    outputStream = open("/tmp/licencia_%s_rev.pdf" % (information.llave_licencia), "wb")
+    output.write(outputStream)
+    outputStream.close()
+    read_plantilla.close()
+
+    try:
+        os.remove('/tmp/qr_' + information.llave_licencia + '.png')
+    except Exception:
+        pass
+    import base64
+    with open("/tmp/licencia_%s_rev.pdf" % (information.llave_licencia), "rb") as pdf:
+        encoded_string = base64.b64encode(pdf.read())
+        pdf.close()
+
+    s3.upload_file("/tmp/licencia_%s_rev.pdf" % (information.llave_licencia), 'igualauploads',
+                          "licencia_%s_rev.pdf" % (information.llave_licencia))
+    try:
+        os.remove('/tmp/licencia_%s_rev.pdf' % information.llave_licencia)
+    except Exception:
+        pass
+    try:
+        os.remove('/tmp/%s' % plantilla_file_name)
+    except Exception:
+        pass
+
+    return encoded_string
 
 
 def lambda_handler(event, context):
@@ -203,6 +396,19 @@ def lambda_handler(event, context):
                             apellidos = p.apellidos_emergencia,
                             telefono_contacto = p.telefono_emergencia
                         )
+            if p.status_pago:
+                file1 = create_pdf_anv(id)
+                file2 = create_pdf_rev(id)
+                return {
+                    'headers': headers_cors,
+                    'statusCode': 200,
+                    'body': json.dumps(
+                        {
+                            'file_anv': file1.decode('utf-8'),
+                            'file_rev': file2.decode('utf-8')
+                        }
+                    )
+                }
             return {
                 'headers': headers_cors,
                 'statusCode': 200,

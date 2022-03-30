@@ -129,7 +129,7 @@ def lambda_handler(event, context):
                 info = database.query('''select pd.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
                 horario_cierre, status_permiso, status_pago, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia, propietario_cp, telefono_celular,
                 telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
-                from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on cl.id_contribuyente = cp.id_contribuyente  ''' + where_clause, *args)
+                from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso  ''' + where_clause, *args)
                 info_headers = [
                     ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
                      'comercio_cp', 'giro', 'tipo',
