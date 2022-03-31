@@ -69,6 +69,11 @@ def rows_to_csv(rows, delimiter=None):
 def lambda_handler(event, context):
     """function to make a simple save licencia to app
     """
+    headers_cors = {
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "*"
+    }
     import base64
     from .db import Row
     headers = Row(dict(event['headers']))
@@ -104,7 +109,7 @@ def lambda_handler(event, context):
         if isinstance(p,dict):
             where_clause = ' where 1 = 1 '
             args =[]
-            if p.tipo == 'licencia':
+            if p.tipo.lower() == 'licencias':
                 if int(p.meses_vencimiento)>0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
                     args.append(p.meses_vencimiento)
@@ -115,11 +120,10 @@ def lambda_handler(event, context):
                  alergias, tipo_licencia,CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin, fecha_nacimiento, sexo, link_firma, telefono_fijo, status_pago, alergias_descripcion, donante, tipo_licencia, link_foto, status_licencia
                 from contribuyentes_licencias as cl '''+ where_clause, *args)
 
-                info_headers = [
-                    ['id_contribuyente', 'curp', 'nombre', 'apellidos', 'calle_numero',
-                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']]
+                info_headers = ['id_contribuyente', 'curp', 'nombre', 'apellidos', 'calle_numero',
+                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']
 
-            elif p.tipo == 'permisos':
+            elif p.tipo.lower() == 'permisos':
                 if int(p.meses_vencimiento) > 0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
                     args.append(p.meses_vencimiento)
@@ -127,14 +131,13 @@ def lambda_handler(event, context):
                     where_clause += ' AND status_permiso = %s '
                     args.append(p.activos)
                 info = database.query('''select pd.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
-                horario_cierre, status_permiso, status_pago, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia, propietario_cp, telefono_celular,
+                horario_cierre, status_permiso, status_pago, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia,propietario_calle_numero, propietario_cp, telefono_celular,
                 telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
                 from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso  ''' + where_clause, *args)
-                info_headers = [
-                    ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
-                     'comercio_cp', 'giro', 'tipo',
-                     'horario_inicio', 'horario_cierre', 'status_permiso', 'curp', 'rfc', 'propietario_nombre',
-                     'propietario_apellidos', 'telefono_ceular', 'telefono_fijo', 'email','vigencia_inicio','vigencia_fin']]
+                info_headers = ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
+     'comercio_cp', 'giro', 'tipo',
+     'horario_inicio', 'horario_cierre', 'status_permiso', 'curp', 'rfc', 'propietario_nombre',
+     'propietario_apellidos', 'telefono_ceular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin','sexo', 'telefono_celular', 'propietario_colonia', 'propietario_calle_numero', 'fecha_nacimiento', 'status_pago', 'propietario_cp']
             else:
                 if int(p.meses_vencimiento) > 0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
@@ -152,13 +155,12 @@ def lambda_handler(event, context):
                                  tipo_licencia, link_foto, status_licencia, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
                                 from contribuyentes_licencias as cl ''' + where_clause, *args)
                 info = info1+info2
-                info_headers = [
-                    ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
+                info_headers = ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
                      'comercio_cp', 'giro', 'tipo',
                      'horario_inicio', 'horario_cierre', 'status_permiso', 'curp', 'rfc', 'propietario_nombre',
                      'propietario_apellidos', 'telefono_ceular', 'telefono_fijo', 'email', 'vigencia_inicio',
                      'vigencia_fin','id_contribuyente', 'curp', 'nombre', 'apellidos', 'calle_numero',
-                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']]
+                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']
 
             if info:
                 if p.excel == 'true':
@@ -166,15 +168,27 @@ def lambda_handler(event, context):
                     from pytz import timezone
                     now_hour = datetime.datetime.now(tz=timezone('America/Mexico_City')).date()
                     filename = 'reporte_%s_%s.csv' % ('iguala_gob', now_hour.strftime('%y-%m-%d'))
-                    for t in info:
-                        info_headers.append([t[i] if i in t else '' for i in info_headers[0]])
-                    info_csv = rows_to_csv(info_headers)
-                    headers_cors["Content-Type"]= "application/octet-stream"
-                    headers_cors["Content-Disposition"]= 'attachment; filename="%s"' % filename
+                    import csv
+                    with open('/tmp/%s'%filename, 'w', encoding='UTF8') as f:
+                        writer = csv.DictWriter(f, fieldnames=info_headers)
+                        writer.writeheader()
+                        for d in info:
+                            writer.writerow(d)
+                    with open('/tmp/'+filename,'rb') as f:
+                        encoded_string = base64.b64encode(f.read())
+                        f.close()
+                    try:
+                        import os
+                        os.remove('/tmp/'+filename)
+                    except Exception:
+                        pass
                     return {
                         'headers': headers_cors,
                         'statusCode': 200,
-                        'body': info_csv
+                        'body': json.dumps({
+                            "filename": filename,
+                            "info": encoded_string.decode('utf-8')
+                        })
                     }
                 else:
 
