@@ -81,7 +81,7 @@ def lambda_handler(event, context):
             else:
                 info = database.query('''select cp.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
                 horario_cierre, status_permiso, status_pago, link_firma, curp, rfc, propietario_nombre, propietario_apellidos, propietario_calle_numero, propietario_colonia, propietario_cp, telefono_celular,
-                telefono_fijo, email, fecha_nacimiento, sexo, llave_permiso, link_identificacion_anv, link_identificacion_rev, dia_ini_funcionamiento, dia_fin_funcionamiento
+                telefono_fijo, email, fecha_nacimiento, sexo, llave_permiso, link_identificacion_anv, link_identificacion_rev, dia_ini_funcionamiento, dia_fin_funcionamiento, link_rfc, link_acta_constitutiva
                 from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso where ''' + p.criterio + '''= %s''',p.dato)
             if info:
                 return {

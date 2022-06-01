@@ -229,7 +229,6 @@ def lambda_handler(event, context):
         b = json.loads(event['body'])
         body = Row(dict(b))
         expected = (('id_permiso',int),
-                    ('curp', str),
                     ('rfc', str),
                     ('propietario_nombre', str),
                     ('propietario_apellidos', str),
@@ -252,6 +251,8 @@ def lambda_handler(event, context):
                     ('horario_cierre', str),
                     ('link_identificacion_anv', str),
                     ('link_identificacion_rev', str),
+                    ('link_rfc', str),
+                    ('link_acta_constitutiva', str),
                     ('dia_ini_funcionamiento', str),
                     ('dia_fin_funcionamiento', str)
             )
@@ -309,6 +310,8 @@ def lambda_handler(event, context):
                                 vigencia_fin=final_date,
                                 link_identificacion_anv=p.link_identificacion_anv,
                                 link_identificacion_rev=p.link_identificacion_rev,
+                                link_rfc=p.link_rfc,
+                                link_acta_constitutiva=p.link_acta_constitutiva,
                                 dia_ini_funcionamiento=p.dia_ini_funcionamiento,
                                 dia_fin_funcionamiento=p.dia_fin_funcionamiento
                 )
@@ -328,13 +331,14 @@ def lambda_handler(event, context):
                                 id_ultima_modificacion=user_or_error.id,
                                 link_identificacion_anv=p.link_identificacion_anv,
                                 link_identificacion_rev=p.link_identificacion_rev,
+                                link_rfc=p.link_rfc,
+                                link_acta_constitutiva=p.link_acta_constitutiva,
                                 dia_ini_funcionamiento=p.dia_ini_funcionamiento,
                                 dia_fin_funcionamiento=p.dia_fin_funcionamiento
 
 
                                 )
             database.update('contribuyentes_permisos_comerciales','id_permiso', p.id_permiso,
-                            curp=p.curp,
                             rfc=p.rfc,
                             propietario_nombre=p.propietario_nombre,
                             propietario_apellidos=p.propietario_apellidos,
