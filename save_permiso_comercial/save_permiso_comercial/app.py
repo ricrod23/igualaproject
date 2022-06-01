@@ -95,7 +95,6 @@ def lambda_handler(event, context):
             b = json.loads(event['body'])
             body = Row(dict(b))
             expected = (
-                ('curp', str),
                 ('rfc', str),
                 ('propietario_nombre', str),
                 ('propietario_apellidos', str),
@@ -119,7 +118,9 @@ def lambda_handler(event, context):
                 ('link_identificacion_anv', str),
                 ('link_identificacion_rev', str),
                 ('dia_ini_funcionamiento', str),
-                ('dia_fin_funcionamiento', str)
+                ('dia_fin_funcionamiento', str),
+                ('link_rfc', str),
+                ('link_acta_constitutiva', str)
             )
             from .utils import validate_body
             p = validate_body(expected, body)
@@ -143,6 +144,8 @@ def lambda_handler(event, context):
                                           hora_creacion=now_hour,
                                           link_identificacion_anv=p.link_identificacion_anv,
                                           link_identificacion_rev=p.link_identificacion_rev,
+                                          link_rfc=p.link_rfc,
+                                          link_acta_constitutiva=p.link_acta_constitutiva,
                                           ultima_actualizacion_fecha=now_date,
                                           ultima_actualizacion_hora=now_hour,
                                           dia_ini_funcionamiento=p.dia_ini_funcionamiento,
@@ -150,7 +153,6 @@ def lambda_handler(event, context):
                                           )
                 database.insert('contribuyentes_permisos_comerciales',
                                 id_permiso=permiso,
-                                curp=p.curp,
                                 rfc=p.rfc,
                                 propietario_nombre=p.propietario_nombre,
                                 propietario_apellidos=p.propietario_apellidos,
@@ -189,9 +191,9 @@ def lambda_handler(event, context):
                 database.update('permisos_comerciales_descrip', 'llave_permiso', key,
                                 link_qr='http://s3-us-west-2.amazonaws.com/igualauploads/qr_%s.png' % (key))
                 from .utils import send_outlook
-                send_outlook(p.email, 'Firma para permiso Gob Iguala',
-                             'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n' +
-                             'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?dato=%s&criterio=llave_permiso&tipo=permiso' % key)
+                #send_outlook(p.email, 'Firma para permiso Gob Iguala',
+                 #            'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n' +
+                  #           'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?dato=%s&criterio=llave_permiso&tipo=permiso' % key)
                 return {
                     'headers': headers_cors,
                     'statusCode': 200,
