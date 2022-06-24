@@ -115,7 +115,10 @@ def lambda_handler(event, context):
                     ('link_foto', str),
                     ('link_identificacion_anv', str),
                     ('link_identificacion_rev', str),
-                    ('link_certificado_tipo_sangre', str)
+                    ('link_certificado_tipo_sangre', str),
+                    ('link_curp', str),
+                    ('link_acta', str),
+                    ('link_comp_domicilio', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -156,7 +159,10 @@ def lambda_handler(event, context):
                             link_identificacion_rev=p.link_identificacion_rev,
                             ultima_actualizacion_fecha=now_date,
                             ultima_actualizacion_hora=now_hour,
-                            link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
+                            link_certificado_tipo_sangre=p.link_certificado_tipo_sangre,
+                            link_curp=p.link_curp,
+                            link_acta=p.link_acta,
+                            link_comp_domicilio=p.link_comp_domicilio
                         )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
             database.insert('contactos_emergencia',
@@ -184,8 +190,8 @@ def lambda_handler(event, context):
             database.update('contribuyentes_licencias','id_contribuyente',id,link_qr='http://s3-us-west-2.amazonaws.com/igualauploads/qr_%s.png'%(key))
 
             from .utils import send_outlook
-            send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
-                                                                   'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?dato=%s&criterio=llave_licencia&tipo=licencia'%key)
+            #send_outlook(p.email,'Firma para licencia Gob Iguala', 'Por favor haz clic en el siguiente enlace para finalizar tu tramite y enviar tu firma.\n'+
+             #                                                      'http://licenciasypermisos.s3-website-us-east-1.amazonaws.com/recabaFirma.html?dato=%s&criterio=llave_licencia&tipo=licencia'%key)
             return {
                 'headers': headers_cors,
                 'statusCode': 200,

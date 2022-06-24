@@ -301,7 +301,10 @@ def lambda_handler(event, context):
                     ('folio_pago', str),
                     ('link_identificacion_anv', str),
                     ('link_identificacion_rev', str),
-                    ('link_certificado_tipo_sangre', str)
+                    ('link_certificado_tipo_sangre', str),
+                    ('link_curp', str),
+                    ('link_acta', str),
+                    ('link_comp_domicilio', str)
                 )
         from .utils import validate_body
         p = validate_body(expected,body)
@@ -362,7 +365,10 @@ def lambda_handler(event, context):
                                 vigencia_fin=final_date,
                                 link_identificacion_anv = p.link_identificacion_anv,
                                 link_identificacion_rev= p.link_identificacion_rev,
-                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
+                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre,
+                                link_curp=p.link_curp,
+                                link_acta=p.link_acta,
+                                link_comp_domicilio=p.link_comp_domicilio
                 )
             else:
                 database.update('contribuyentes_licencias','curp', p.curp,
@@ -388,7 +394,10 @@ def lambda_handler(event, context):
                                 link_identificacion_anv=p.link_identificacion_anv,
                                 link_identificacion_rev=p.link_identificacion_rev,
                                 folio_pago='',
-                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre
+                                link_certificado_tipo_sangre=p.link_certificado_tipo_sangre,
+                                link_curp=p.link_curp,
+                                link_acta=p.link_acta,
+                                link_comp_domicilio=p.link_comp_domicilio
                             )
             id = database.get('select id_contribuyente from contribuyentes_licencias where curp = %s',p.curp.upper()).id_contribuyente
             database.update('contactos_emergencia', 'id_contribuyente',id,

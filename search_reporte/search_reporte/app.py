@@ -101,15 +101,27 @@ def lambda_handler(event, context):
         body = Row(b)
         expected = (('meses_vencimiento',str),
                     ('activos', str),
-                    ('tipo', str),
-                    ('excel', str)
+                    ('excel', str),
+                    ('fecha_inicio',str),
+                    ('fecha_fin',str),
+                    ('filtro_fecha',str),
+                    ('filtro_reporte', str)
+
         )
         from .utils import validate_body
         p = validate_body(expected,body)
         if isinstance(p,dict):
             where_clause = ' where 1 = 1 '
             args =[]
-            if p.tipo.lower() == 'licencias':
+            if p.filtro_fecha.lower() != 'todos':
+                if 'alta' in p.filtro_fecha.lower():
+                    where_clause += ' AND fecha_creacion BETWEEN %s and %s '
+                elif 'modifica' in p.filtro_fecha.lower():
+                    where_clause += ' AND ultima_actualizacion_fecha BETWEEN %s AND %s '
+                args.append(p.fecha_inicio)
+                args.append(p.fecha_fin)
+
+            if p.filtro_reporte.lower() == 'licencias':
                 if int(p.meses_vencimiento)>0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
                     args.append(p.meses_vencimiento)
@@ -117,13 +129,15 @@ def lambda_handler(event, context):
                     where_clause += ' AND status_licencia = %s '
                     args.append(p.activos)
                 info = database.query('''select cl.id_contribuyente, curp, cl.nombre, cl.apellidos, calle_numero,colonia,municipio,estado,cp,telefono_celular, email, tipo_sangre,
-                 alergias, tipo_licencia,CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin, fecha_nacimiento, sexo, link_firma, telefono_fijo, status_pago, alergias_descripcion, donante, tipo_licencia, link_foto, status_licencia
+                 alergias, tipo_licencia,CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin, fecha_nacimiento, sexo, link_firma, telefono_fijo, alergias_descripcion, donante, tipo_licencia, link_foto, 
+                 IF(status_licencia = true,'ACTIVADA', 'NO ACTIVADA') as status_licencia, IF(status_pago = true, 'PAGADA', 'NO PAGADA') as status_pago,
+                 CAST(ultima_actualizacion_fecha AS CHAR) as ultima_actualizacion_fecha, CAST(ultima_actualizacion_hora AS CHAR) as ultima_actualizacion_hora,
+                CAST(fecha_creacion AS CHAR) as fecha_creacion, CAST(hora_creacion AS CHAR) as hora_creacion
                 from contribuyentes_licencias as cl '''+ where_clause, *args)
 
-                info_headers = ['id_contribuyente', 'curp', 'nombre', 'apellidos', 'calle_numero',
-                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']
+                info_headers = list(info.keys())
 
-            elif p.tipo.lower() == 'permisos':
+            elif p.filtro_reporte.lower() == 'permisos':
                 if int(p.meses_vencimiento) > 0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
                     args.append(p.meses_vencimiento)
@@ -131,13 +145,14 @@ def lambda_handler(event, context):
                     where_clause += ' AND status_permiso = %s '
                     args.append(p.activos)
                 info = database.query('''select pd.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
-                horario_cierre, status_permiso, status_pago, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia,propietario_calle_numero, propietario_cp, telefono_celular,
-                telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
+                horario_cierre, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia,propietario_calle_numero, propietario_cp, telefono_celular,
+                telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin,
+                CAST(pd.ultima_actualizacion_fecha AS CHAR) as permiso_ultima_actualizacion_fecha, CAST(pd.ultima_actualizacion_hora AS CHAR) as permiso_ultima_actualizacion_hora,
+                CAST(pd.fecha_creacion AS CHAR) as fecha_creacion, CAST(pd.hora_creacion AS CHAR) as hora_creacion,
+                CAST(cp.ultima_actualizacion_fecha AS CHAR) as info_personal_ultima_actualizacion_fecha, CAST(cp.ultima_actualizacion_hora AS CHAR) as info_personal_ultima_actualizacion_hora,
+                IF(status_permiso = true,'ACTIVADO', 'NO ACTIVADO') as status_licencia, IF(status_pago = true, 'PAGADO', 'NO PAGADO') as status_pago
                 from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso  ''' + where_clause, *args)
-                info_headers = ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
-     'comercio_cp', 'giro', 'tipo',
-     'horario_inicio', 'horario_cierre', 'status_permiso', 'curp', 'rfc', 'propietario_nombre',
-     'propietario_apellidos', 'telefono_ceular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin','sexo', 'telefono_celular', 'propietario_colonia', 'propietario_calle_numero', 'fecha_nacimiento', 'status_pago', 'propietario_cp']
+                info_headers = list(info.keys())
             else:
                 if int(p.meses_vencimiento) > 0:
                     where_clause += ' AND vigencia_fin <= (now()+INTERVAL %s MONTH) '
@@ -145,22 +160,29 @@ def lambda_handler(event, context):
                 if p.activos in ['1', '0']:
                     where_clause += ' AND status_permiso = %s '
                     args.append(p.activos)
+                print(where_clause)
                 info1 = database.query('''select pd.id_permiso, razon_social, denominacion, comercio_calle_numero, comercio_colonia, comercio_cp, giro, tipo, horario_inicio, 
-                horario_cierre, status_permiso, status_pago, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia, propietario_cp, telefono_celular,
-                telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
+                horario_cierre, curp, rfc, propietario_nombre, propietario_apellidos, propietario_colonia, propietario_cp, telefono_celular,
+                telefono_fijo, email, fecha_nacimiento, sexo, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin,
+                CAST(pd.ultima_actualizacion_fecha AS CHAR) as permiso_ultima_actualizacion_fecha, CAST(pd.ultima_actualizacion_hora AS CHAR) as permiso_ultima_actualizacion_hora,
+                CAST(pd.fecha_creacion AS CHAR) as fecha_creacion, CAST(pd.hora_creacion AS CHAR) as hora_creacion,
+                CAST(cp.ultima_actualizacion_fecha AS CHAR) as info_personal_ultima_actualizacion_fecha, CAST(cp.ultima_actualizacion_hora AS CHAR) as info_personal_ultima_actualizacion_hora,
+                IF(status_permiso = true,'ACTIVADO', 'NO ACTIVADO') as status_licencia, IF(status_pago = true, 'PAGADO', 'NO PAGADO') as status_pago
                 from permisos_comerciales_descrip pd  inner join contribuyentes_permisos_comerciales cp on pd.id_permiso = cp.id_permiso  ''' + where_clause,*args)
 
+                where_clause = where_clause.replace('pd.','')
+                where_clause = where_clause.replace('status_permiso', 'status_licencia')
+                where_clause = where_clause.replace('or pd.ultima_actualizacion_fecha BETWEEN %s AND %s', '')
+
                 info2 = database.query('''select cl.id_contribuyente, curp, cl.nombre, cl.apellidos, calle_numero,colonia,municipio,estado,cp,telefono_celular, email, tipo_sangre,
-                                 alergias, tipo_licencia, fecha_nacimiento, sexo, link_firma, telefono_fijo, status_pago, alergias_descripcion, donante, 
-                                 tipo_licencia, link_foto, status_licencia, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin
+                                 alergias, tipo_licencia, fecha_nacimiento, sexo, link_firma, telefono_fijo, alergias_descripcion, donante, 
+                                 tipo_licencia, link_foto, CAST(vigencia_inicio AS CHAR) as vigencia_inicio, CAST(vigencia_fin AS CHAR) as vigencia_fin,
+                                 CAST(ultima_actualizacion_fecha AS CHAR) as ultima_actualizacion_fecha, CAST(ultima_actualizacion_hora AS CHAR) as ultima_actualizacion_hora,
+                                CAST(fecha_creacion AS CHAR) as fecha_creacion, CAST(hora_creacion AS CHAR) as hora_creacion,
+                                IF(status_licencia = true,'ACTIVADA', 'NO ACTIVADA') as status_licencia, IF(status_pago = true, 'PAGADA', 'NO PAGADA') as status_pago
                                 from contribuyentes_licencias as cl ''' + where_clause, *args)
                 info = info1+info2
-                info_headers = ['id_permiso', 'razon_social', 'denominacion', 'comercio_calle_numero', 'comercio_colonia',
-                     'comercio_cp', 'giro', 'tipo',
-                     'horario_inicio', 'horario_cierre', 'status_permiso', 'curp', 'rfc', 'propietario_nombre',
-                     'propietario_apellidos', 'telefono_ceular', 'telefono_fijo', 'email', 'vigencia_inicio',
-                     'vigencia_fin','id_contribuyente', 'curp', 'nombre', 'apellidos', 'calle_numero',
-                     'colonia', 'cp', 'telefono_celular', 'telefono_fijo', 'email', 'vigencia_inicio', 'vigencia_fin']
+                info_headers = list(info.keys())
 
             if info:
                 if p.excel == 'true':
